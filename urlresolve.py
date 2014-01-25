@@ -7,25 +7,12 @@ from urlparse import urlparse
 
 """Not guaranteed to be a short URL, but looks like one:"""
 SHORT_URL_PAT = re.compile('http://(?:[\w_-]+\.)?[\w_-]+\.\w{2,3}/\w+$')
-#END_LINK_PAT = re.compile('\.\w{1,4}/?$')
 MAX_SHORT_URL_LENGTH = 30
 DNR_FILE = os.path.join(os.path.dirname(__file__), 'do_not_resolve.txt')
 TTL = 60 * 60 * 24
 
+
 class InvalidUrl(Exception): pass
-
-def get_redis_db():
-    return redis.StrictRedis(host='localhost', port=6379, db=0)
-
-redisdb = get_redis_db()
-def _get_redis(key):
-    return redisdb.get(key)
-
-def _set_redis(key, value, ttl=None):
-    redisdb.set(key, value, ex=ttl) 
-
-def _exists_redis(key):
-    return redisdb.exists(key)
 
 
 class UrlResolver(object):
@@ -33,7 +20,8 @@ class UrlResolver(object):
     URL to a non-redirected endpoint. In general, use the resolve
     classmethod instead of instantiating this class directly."""
 
-    def __init__(self, url):
+    def __init__(self, backend, url):
+        self.backend = backend
         self.url = url
         self.status = 'OK'
         self.requests = []
@@ -47,7 +35,7 @@ class UrlResolver(object):
         self.reason = reason
         self.resolved = False
 
-    def _resolve(self, url):
+    def _handle_resolve(self, url):
         if self.check_cache(url):
             return
         if not self.check_should_resolve(url):
@@ -67,27 +55,30 @@ class UrlResolver(object):
             self.resolved = True
         elif r.status_code in (301, 302):
             loc = r.headers['Location']
-            return self._resolve(loc)
+            return self._handle_resolve(loc)
         else:
             self._error('http response status code: %s' % r.status_code)
         return
 
-    @classmethod
-    def resolve(cls, url):
-        """Resolve the URL to a non-shortened endpoint."""
-        resolver = UrlResolver(url)
+    def _resolve(self, url):
         try:
-            resolver._resolve(url)
+            self._handle_resolve(url)
         except requests.exceptions.ConnectionError, e:
-            resolver._error('Connection error resolving URL: %s' % url)
+            self._error('Connection error resolving URL: %s' % url)
         except InvalidUrl:
-            resolver._error('Bad URL: %s' % url)
-        resolver.cache_aliases()
-        return resolver.data()
+            self._error('Bad URL: %s' % url)
+        self.cache_aliases()
+        return self.data()
+
+    @classmethod
+    def resolve(cls, backend, url):
+        """Resolve the URL to a non-shortened endpoint."""
+        resolver = UrlResolver(backend, url)
+        return resolver._resolve(url)
 
     def check_cache(self, url):
         """Check the redis db for previously resolved URL."""
-        cached_url = _get_redis(url)
+        cached_url = self.backend.get(url)
         self.requests.append({
             'type': 'CACHE',
             'request': url,
@@ -102,7 +93,7 @@ class UrlResolver(object):
 
     def check_should_resolve(self, url):
         """A URL should be resolved if its domain is not in the DNR list
-        (i.e. listed in the redis db), is not longer than the max short URL
+        (i.e. listed in the backend), is not longer than the max short URL
         length, and otherwise looks like a short URL."""
         domain = urlparse(url).netloc
         if not domain:
@@ -110,7 +101,7 @@ class UrlResolver(object):
         if SHORT_URL_PAT.findall(url):
             return True
         should = True
-        if _exists_redis(domain):
+        if self.backend.exists(domain):
             should = False
         if len(url) > MAX_SHORT_URL_LENGTH:
             should = False
@@ -125,7 +116,7 @@ class UrlResolver(object):
         if self.resolved:
             for req in self.requests[:-1]:
                 if req['type'] == 'CACHE' and req['response'] == None:
-                    _set_redis(req['request'], self.resolved_url)
+                    self.backend.set(req['request'], self.resolved_url)
                     self.info.append(
                         'Cached URL %s as %s' % (
                             req['request'], self.resolved_url))
@@ -142,3 +133,15 @@ class UrlResolver(object):
         if hasattr(self, 'reason'):
             data['reason'] = self.reason
         return data
+
+
+class RedisUrlResolver(UrlResolver):
+
+    from backends import RedisBackend
+    backend = RedisBackend()
+
+    @classmethod
+    def resolve(cls, url):
+        """Resolve the URL to a non-shortened endpoint."""
+        resolver = UrlResolver(cls.backend, url)
+        return resolver._resolve(url)
