@@ -14,7 +14,6 @@ TTL = 60 * 60 * 24
 
 class InvalidUrl(Exception): pass
 
-
 def get_redis_db():
     return redis.StrictRedis(host='localhost', port=6379, db=0)
 
@@ -30,6 +29,9 @@ def _exists_redis(key):
 
 
 class UrlResolver(object):
+    """Class instantiated on a particular input URL for resolving that
+    URL to a non-redirected endpoint. In general, use the resolve
+    classmethod instead of instantiating this class directly."""
 
     def __init__(self, url):
         self.url = url
@@ -38,18 +40,6 @@ class UrlResolver(object):
         self.resolved = False
         self.info = []
         self.resolved_url = None
-
-
-    def data(self):
-        data = {
-            'status': self.status,
-            'url': self.url,
-            'requests': self.requests,
-            'resolved': self.resolved,
-            'info': self.info,
-            'resolved_url': self.resolved_url
-        }
-        return data
 
     def _error(self, reason):
         logging.error(reason)
@@ -79,21 +69,21 @@ class UrlResolver(object):
             loc = r.headers['Location']
             return self._resolve(loc)
         else:
-            self._error(
-                'http response status code: %s' % r.status_code)
+            self._error('http response status code: %s' % r.status_code)
         return
 
     @classmethod
     def resolve(cls, url):
+        """Resolve the URL to a non-shortened endpoint."""
         resolver = UrlResolver(url)
         try:
             resolver._resolve(url)
         except requests.exceptions.ConnectionError, e:
-            self._error(self.data(),
-                'Connection error resolving URL: %s' % url)
+            resolver._error('Connection error resolving URL: %s' % url)
         except InvalidUrl:
-            self._error('Bad URL: %s' % url)
-        return resolver.return_data()
+            resolver._error('Bad URL: %s' % url)
+        resolver.cache_aliases()
+        return resolver.data()
 
     def check_cache(self, url):
         """Check the redis db for previously resolved URL."""
@@ -130,7 +120,8 @@ class UrlResolver(object):
                 self.resolved=True
         return False
 
-    def return_data(self):
+    def cache_aliases(self):
+        """Cache uncached URL aliases from the request history."""
         if self.resolved:
             for req in self.requests[:-1]:
                 if req['type'] == 'CACHE' and req['response'] == None:
@@ -138,4 +129,16 @@ class UrlResolver(object):
                     self.info.append(
                         'Cached URL %s as %s' % (
                             req['request'], self.resolved_url))
-        return self.data()
+
+    def data(self):
+        data = {
+            'status': self.status,
+            'url': self.url,
+            'requests': self.requests,
+            'resolved': self.resolved,
+            'info': self.info,
+            'resolved_url': self.resolved_url
+        }
+        if hasattr(self, 'reason'):
+            data['reason'] = self.reason
+        return data
