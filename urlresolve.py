@@ -9,7 +9,6 @@ from urlparse import urlparse
 SHORT_URL_PAT = re.compile('http://(?:[\w_-]+\.)?[\w_-]+\.\w{2,3}/\w+$')
 MAX_SHORT_URL_LENGTH = 30
 DNR_FILE = os.path.join(os.path.dirname(__file__), 'do_not_resolve.txt')
-TTL = 60 * 60 * 24
 
 USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.63 Safari/537.36'
 
@@ -37,9 +36,9 @@ class UrlResolver(object):
         self.resolved = False
 
     def _handle_resolve(self, url, check_cache=True, send_user_agent=False):
-        if check_cache and self.check_cache(url):
-            return
         if not self.check_should_resolve(url):
+            return
+        if check_cache and self.check_cache(url):
             return
         if send_user_agent:
             r = requests.get(url, allow_redirects=False,
