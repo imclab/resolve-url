@@ -1,7 +1,9 @@
 import ConfigParser
+import os
 import redis
 
-CONFIG_FN = 'backends.cfg'
+wd = os.path.dirname(os.path.realpath(__file__))
+CONFIG_FN = os.path.join(wd, 'backends.cfg')
 
 conf = ConfigParser.ConfigParser()
 conf.readfp(open(CONFIG_FN))

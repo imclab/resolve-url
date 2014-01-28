@@ -11,6 +11,7 @@ MAX_SHORT_URL_LENGTH = 30
 DNR_FILE = os.path.join(os.path.dirname(__file__), 'do_not_resolve.txt')
 TTL = 60 * 60 * 24
 
+USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.63 Safari/537.36'
 
 class InvalidUrl(Exception): pass
 
@@ -35,12 +36,16 @@ class UrlResolver(object):
         self.reason = reason
         self.resolved = False
 
-    def _handle_resolve(self, url):
-        if self.check_cache(url):
+    def _handle_resolve(self, url, check_cache=True, send_user_agent=False):
+        if check_cache and self.check_cache(url):
             return
         if not self.check_should_resolve(url):
             return
-        r = requests.get(url, allow_redirects=False)
+        if send_user_agent:
+            r = requests.get(url, allow_redirects=False,
+                headers={ 'User-Agent': USER_AGENT })
+        else:
+            r = requests.get(url, allow_redirects=False)
         self.requests.append({
             'type': 'NET',
             'request': url,
@@ -48,7 +53,7 @@ class UrlResolver(object):
         })
         if r.status_code == 200:
             domain = urlparse(url).netloc
-            _set_redis(domain, '')
+            self.backend.set(domain, '')
             self.info.append(
                 'Added domain %s to do-not-resolve list' % domain
             )
@@ -56,6 +61,9 @@ class UrlResolver(object):
         elif r.status_code in (301, 302):
             loc = r.headers['Location']
             return self._handle_resolve(loc)
+        elif not send_user_agent:
+            return self._handle_resolve(url, check_cache=False,
+                send_user_agent=True)
         else:
             self._error('http response status code: %s' % r.status_code)
         return

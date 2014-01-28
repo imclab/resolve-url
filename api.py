@@ -18,6 +18,7 @@ from logging import StreamHandler
 #        os.environ['FLASK_SETTINGS_MODULE'] = 'core.settings.loc'
 #
 app = Flask(__name__)
+app.debug = True
 app.logger.addHandler(StreamHandler())
 
 #settings_module = os.environ.get('FLASK_SETTINGS_MODULE')
@@ -32,7 +33,7 @@ app.logger.addHandler(StreamHandler())
 #settings = sys.modules[settings_module]
 
 
-@app.route("/", methods=['GET'])
+@app.route('/', methods=['GET'])
 def index():
     url = request.args.get('url')
     if url:
@@ -43,4 +44,4 @@ def index():
     
         
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=8000, debug=True)
