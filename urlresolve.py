@@ -108,16 +108,15 @@ class UrlResolver(object):
             raise InvalidUrl
         if SHORT_URL_PAT.findall(url):
             return True
-        should = True
-        if self.backend.exists(domain):
-            should = False
-        if len(url) > MAX_SHORT_URL_LENGTH:
-            should = False
-        if not should:
+        if any([
+                self.backend.exists(domain),
+                len(url) > MAX_SHORT_URL_LENGTH ]):
             self.resolved_url=url
             if len(self.requests) > 1:
                 self.resolved=True
-        return False
+            return False
+        else:
+            return True
 
     def cache_aliases(self):
         """Cache uncached URL aliases from the request history."""
