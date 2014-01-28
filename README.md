@@ -7,6 +7,54 @@ Due to this tolerance, the "should resolve" heuristics, and the lack of full
 resolution to 200s, this might not be the right resolver for the most general
 use cases.
 
+GETTING STARTED
+===============
+
+* Create a backends.cfg file (see backends.cfg.example)
+
+* Install the requirements (preferably in a virtual environment):
+
+    pip install -r requirements
+
+* Be sure redis is installed and running on the host specified in backends.cfg
+
+* Run the Flask application:
+
+    python api.py
+
+* Hit the API with a shortened URL, e.g.
+
+    http://localhost:8543/?url=http://bit.ly/1euQlFO
+
+You should also be able to run api.py via wsgi. In the lab, we are using
+Mozilla Circus (http://circus.readthedocs.org/) + Chaussette
+(https://chaussette.readthedocs.org) with the following circus.ini:
+
+    [circus]
+    statsd=True
+    httpd=False
+    httpd_host=localhost
+    httpd_port=_circus-port_
+
+    [watcher:resolve_url]
+    uid=apps
+    copy_env=True
+    virtualenv=_path-to-virtual-environment_
+    cmd=chaussette --fd $(circus.sockets.resolve_url) --backend gevent api.app
+    use_sockets=True
+    numprocesses=1
+    
+    [socket:resolve_url]
+    host=0.0.0.0
+    port=_port-to-run-on_
+    
+    [env:resolve_url]
+    PYTHONPATH=$PYTHONPATH:_path-to-repo_
+
+
+FEATURES
+========
+
 * Resolved URLs are cached to Redis backend
 
 * Multiple redirects are cached as final destination, rather than as
@@ -31,6 +79,6 @@ use cases.
 * Web API is optional. To call the library API directly, see usage in the
   web application (api.py)
 
-* Redis is not currently optional -- but it should be easy enough to
+* Redis is currently not optional -- but it should be easy enough to
   implement an alternative backend to plug into this.
 

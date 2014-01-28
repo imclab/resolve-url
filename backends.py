@@ -1,3 +1,5 @@
+"""Resolved-URL cache backends. A backend should implement get, set, and
+exists. Right now we only have RedisBackend."""
 import ConfigParser
 import os
 import redis
@@ -10,6 +12,7 @@ conf.readfp(open(CONFIG_FN))
 
 
 def get_redis_db():
+    """Setup the redis database connection."""
     return redis.StrictRedis(
         host=conf.get('redis', 'host'),
         port=conf.getint('redis', 'port'),
