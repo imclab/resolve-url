@@ -34,22 +34,22 @@ Mozilla Circus (http://circus.readthedocs.org/) + Chaussette
     statsd=True
     httpd=False
     httpd_host=localhost
-    httpd_port=_circus-port_
+    httpd_port=<circus-port>
 
     [watcher:resolve_url]
     uid=apps
     copy_env=True
-    virtualenv=_path-to-virtual-environment_
+    virtualenv=<path-to-virtual-environment>
     cmd=chaussette --fd $(circus.sockets.resolve_url) --backend gevent api.app
     use_sockets=True
     numprocesses=1
     
     [socket:resolve_url]
     host=0.0.0.0
-    port=_port-to-run-on_
+    port=<port-to-run-on>
     
     [env:resolve_url]
-    PYTHONPATH=$PYTHONPATH:_path-to-repo_
+    PYTHONPATH=$PYTHONPATH:<path-to-repo>
 
 
 FEATURES
