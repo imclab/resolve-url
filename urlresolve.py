@@ -7,7 +7,7 @@ from urlparse import urlparse
 
 """Not guaranteed to be a short URL, but looks like one:"""
 SHORT_URL_PAT = re.compile('http://(?:[\w_-]+\.)?[\w_-]+\.\w{2,3}/\w+$')
-MAX_SHORT_URL_LENGTH = 30
+MAX_SHORT_URL_LENGTH = 50
 DNR_FILE = os.path.join(os.path.dirname(__file__), 'do_not_resolve.txt')
 
 USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.63 Safari/537.36'
