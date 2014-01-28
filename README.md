@@ -1,7 +1,11 @@
 A simple short URL resolver.
 
 Attempts to resolve short URLs with as little network utilization as seems
-reasonable.
+reasonable. Designed primarily for the use case of resolving shortened URLs
+occurring in Tweets, with some tolerance for things not getting resolved.
+Due to this tolerance, the "should resolve" heuristics, and the lack of full
+resolution to 200s, this might not be the right resolver for the most general
+use cases.
 
 * Resolved URLs are cached to Redis backend
 
@@ -29,3 +33,4 @@ reasonable.
 
 * Redis is not currently optional -- but it should be easy enough to
   implement an alternative backend to plug into this.
+
