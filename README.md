@@ -1,48 +1,31 @@
-##REQUIREMENTS
+A simple short URL resolver.
 
-[virtualenvwrapper](http://virtualenvwrapper.readthedocs.org/en/latest/install.html)
+Attempts to resolve short URLs with as little network utilization as seems
+reasonable.
 
-###DEVELOPMENT
+* Resolved URLs are cached to Redis backend
 
-    # Clone secrets and fablib repositories
-    git clone git@github.com:NUKnightLab/secrets.git
-    git clone git@github.com:NUKnightLab/fablib.git
-    
-    # Change into project directory
-    cd resolve-url
-    
-    # Make virtual environment
-    mkvirtualenv resolve-url
-    
-    # Activate virtual environment
-    workon resolve-url
-    
-    # Install requirements
-    pip install -r requirements.txt
-    
-    # Setup (if necessary)
-    fab loc setup
+* Multiple redirects are cached as final destination, rather than as
+  intermediates, in order to reduce future cache hits
 
-    # Start the development server
-    python api.py
-    
+* 301 & 302 responses are assumed to have valid locations -- if the location
+  header does not look like a short URL, it is taken to be a valid long
+  URL for resolution
 
-###DEPLOYMENT
+* Some shorteners return weird errors for missing User-Agent headers, whereas
+  including the User-Agent is a problem in other cases. Thus, User-Agent
+  is not included except as a fallback when a non-200, 301, or 302 is
+  received.
 
-Projects are deployed to the application user's home directory in: ``/home/apps/sites``
+* API response includes the history of requests made in resolving the URL,
+  including cache requests. Thus, a request should not always return the
+  same response (the requests history will differ, whereas the resolved URL
+  should be the same)
 
-Deployment is by direct clone from git. The name of the git repository will be the name of the directory in ``sites`` that is created by the ``git clone`` command.
+* To make a web API request: <api-location>/?url=<short-url>
 
-    # Do this once before the intial deployment (replace `stg` with `prd` for production)
-    fab stg setup
-    
-    # Do this to deploy (replace `stg` with `prd` for production)
-    fab stg deploy
+* Web API is optional. To call the library API directly, see usage in the
+  web application (api.py)
 
-
-###REQUIRED ENVIRONMENT VARIABLES:
-
-- FLASK_SETTINGS_MODULE
-- WORKON_HOME (set manually if not using mkvirtualenv)
-
-
+* Redis is not currently optional -- but it should be easy enough to
+  implement an alternative backend to plug into this.
