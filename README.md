@@ -26,7 +26,7 @@ use cases.
   same response (the requests history will differ, whereas the resolved URL
   should be the same)
 
-* To make a web API request: <api-location>/?url=<short-url>
+* To make a web API request: [api-location]/?url=[short-url]
 
 * Web API is optional. To call the library API directly, see usage in the
   web application (api.py)
