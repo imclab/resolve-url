@@ -1,4 +1,10 @@
-A simple short URL resolver.
+KnightLab resolve-url
+=====================
+
+A simple short URL resolver without a clever name.
+
+Description
+-----------
 
 Attempts to resolve short URLs with as little network utilization as seems
 reasonable. Designed primarily for the use case of resolving shortened URLs
@@ -7,8 +13,12 @@ Due to this tolerance, the "should resolve" heuristics, and the lack of full
 resolution to 200s, this might not be the right resolver for the most general
 use cases.
 
-GETTING STARTED
-===============
+License
+-------
+MIT License. See the included LICENSE.txt file.
+
+Getting Started
+---------------
 
 * Create a backends.cfg file (see backends.cfg.example)
 
@@ -52,8 +62,8 @@ Mozilla Circus (http://circus.readthedocs.org/) + Chaussette
     PYTHONPATH=$PYTHONPATH:<path-to-repo>
 
 
-FEATURES
-========
+Features
+--------
 
 * Resolved URLs are cached to Redis backend
 
@@ -74,11 +84,19 @@ FEATURES
   same response (the requests history will differ, whereas the resolved URL
   should be the same)
 
+Usage
+-----
+
 * To make a web API request: [api-location]/?url=[short-url]
+
+    http://localhost:8543/?url=http://bit.ly/1euQlFO
+
+  The web application will return a JSON payload with the resolved URL
+  keyed as resolved\_url.
 
 * Web API is optional. To call the library API directly, see usage in the
   web application (api.py)
 
-* Redis is currently not optional -- but it should be easy enough to
+* Redis is currently required -- but it should be easy enough to
   implement an alternative backend to plug into this.
 
