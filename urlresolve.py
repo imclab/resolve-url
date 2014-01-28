@@ -56,6 +56,7 @@ class UrlResolver(object):
             self.info.append(
                 'Added domain %s to do-not-resolve list' % domain
             )
+            self.resolved_url = url
             self.resolved = True
         elif r.status_code in (301, 302):
             loc = r.headers['Location']
@@ -132,7 +133,6 @@ class UrlResolver(object):
             'status': self.status,
             'url': self.url,
             'requests': self.requests,
-            'resolved': self.resolved,
             'info': self.info,
             'resolved_url': self.resolved_url
         }
