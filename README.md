@@ -34,7 +34,7 @@ Getting Started
 
 * Hit the API with a shortened URL, e.g.
 
-    http://localhost:8543/?url=http://bit.ly/1euQlFO
+    http://localhost/?url=http://bit.ly/1euQlFO
 
 You should also be able to run api.py via wsgi. In the lab, we are using
 Mozilla Circus (http://circus.readthedocs.org/) + Chaussette
@@ -89,7 +89,7 @@ Usage
 
 * To make a web API request: [api-location]/?url=[short-url]
 
-    http://localhost:8543/?url=http://bit.ly/1euQlFO
+    http://localhost/?url=http://bit.ly/1euQlFO
 
   The web application will return a JSON payload with the resolved URL
   keyed as resolved\_url.
