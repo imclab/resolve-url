@@ -11,6 +11,11 @@ SHORT_URL_PAT = re.compile('http://(?:[\w_-]+\.)?[\w_-]+\.\w{2,3}/\w+$')
 MAX_SHORT_URL_LENGTH = 50
 USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.63 Safari/537.36'
 
+FULL_RESOLVE = True # Resolve to 200. If False, will use a
+                    # heuristic for reducing the number of
+                    # requests made, but may not fully resolve
+                    # all URLs
+
 
 class InvalidUrl(Exception): pass
 
@@ -60,6 +65,10 @@ class UrlResolver(object):
             self.resolved = True
         elif r.status_code in (301, 302):
             loc = r.headers['Location']
+            parsed_loc = urlparse(loc)
+            if not parsed_loc.scheme:
+                parsed_url = urlparse(url)
+                loc = '%s://%s%s' % (parsed_url.scheme, parsed_url.netloc, loc)
             return self._handle_resolve(loc)
         elif not send_user_agent:
             return self._handle_resolve(url, check_cache=False,
@@ -103,6 +112,8 @@ class UrlResolver(object):
         """A URL should be resolved if its domain is not in the DNR list
         (i.e. listed in the backend), is not longer than the max short URL
         length, and otherwise looks like a short URL."""
+        if FULL_RESOLVE:
+            return True
         domain = urlparse(url).netloc
         if not domain:
             raise InvalidUrl
